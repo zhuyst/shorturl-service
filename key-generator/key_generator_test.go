@@ -3,6 +3,7 @@ package key_generator
 import (
 	"github.com/alicebob/miniredis"
 	"github.com/go-redis/redis"
+	"shorturl_service/node-id-generator"
 	"sync"
 	"testing"
 )
@@ -46,7 +47,7 @@ func TestMultiKeyGenerator(t *testing.T) {
 	waitGroup.Add(generatorNumber)
 
 	redisClient := newTestRedisClient()
-	redisClient.Set(nodeIdKey, generatorNumber-2, 0)
+	redisClient.Set(node_id_generator.NodeIdKey, generatorNumber-2, 0)
 	generatorId := 0
 	for i := 0; i < generatorNumber; i++ {
 		go func() {
@@ -87,7 +88,7 @@ func TestMultiKeyGenerator_Generate(t *testing.T) {
 	waitGroup.Add(generatorNumber * generateNumber)
 
 	redisClient := newTestRedisClient()
-	redisClient.Set(nodeIdKey, generatorNumber-2, 0)
+	redisClient.Set(node_id_generator.NodeIdKey, generatorNumber-2, 0)
 	for i := 0; i < generatorNumber; i++ {
 		go func() {
 			generator, err := New(redisClient)
