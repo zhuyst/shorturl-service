@@ -6,7 +6,7 @@ ENV GO111MODULE on
 
 ADD . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo ./example/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo ./example/main.go
 
 CMD [ "./main" ]
 
@@ -14,6 +14,6 @@ FROM alpine:3.9.2
 
 WORKDIR /go/src/
 
-COPY --from=BUILDER main main
+COPY --from=BUILDER /go/src/main main
 
 CMD [ "./main" ]
