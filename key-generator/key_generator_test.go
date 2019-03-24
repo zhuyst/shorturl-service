@@ -1,10 +1,9 @@
 package key_generator
 
 import (
-	"github.com/alicebob/miniredis"
-	"github.com/go-redis/redis"
-	"shorturl_service/node-id-generator"
+	"shorturl_service/helper"
 	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -46,14 +45,13 @@ func TestMultiKeyGenerator(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(generatorNumber)
 
-	redisClient := newTestRedisClient()
-	redisClient.Set(node_id_generator.NodeIdKey, generatorNumber-2, 0)
-	generatorId := 0
+	redisClient := helper.NewTestRedisClient()
+	var generatorId int32 = 0
 	for i := 0; i < generatorNumber; i++ {
 		go func() {
 			defer waitGroup.Done()
-			generatorId++
-			j := generatorId
+			atomic.AddInt32(&generatorId, 1)
+			j := atomic.LoadInt32(&generatorId)
 
 			generator, err := New(redisClient)
 			if err != nil {
@@ -87,8 +85,7 @@ func TestMultiKeyGenerator_Generate(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(generatorNumber * generateNumber)
 
-	redisClient := newTestRedisClient()
-	redisClient.Set(node_id_generator.NodeIdKey, generatorNumber-2, 0)
+	redisClient := helper.NewTestRedisClient()
 	for i := 0; i < generatorNumber; i++ {
 		go func() {
 			generator, err := New(redisClient)
@@ -126,22 +123,6 @@ func TestMultiKeyGenerator_Generate(t *testing.T) {
 }
 
 func newKeyGenerator() (*KeyGenerator, error) {
-	redisClient := newTestRedisClient()
+	redisClient := helper.NewTestRedisClient()
 	return New(redisClient)
-}
-
-func newTestRedisClient() *redis.Client {
-	ms, err := miniredis.Run()
-	if err != nil {
-		panic(err)
-	}
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: ms.Addr(),
-	})
-	if err = redisClient.Ping().Err(); err != nil {
-		panic(err)
-	}
-
-	return redisClient
 }

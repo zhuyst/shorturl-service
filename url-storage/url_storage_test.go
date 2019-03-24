@@ -1,8 +1,7 @@
 package url_storage
 
 import (
-	"github.com/alicebob/miniredis"
-	"github.com/go-redis/redis"
+	"shorturl_service/helper"
 	"strings"
 	"testing"
 )
@@ -77,14 +76,6 @@ func TestUrlStorage_GetLongUrlByKey(t *testing.T) {
 }
 
 func newUrlStorage() (*UrlStorage, error) {
-	ms, err := miniredis.Run()
-	if err != nil {
-		panic(err)
-	}
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: ms.Addr(),
-	})
-
+	redisClient := helper.NewTestRedisClient()
 	return New(redisClient, "https://d.zhuyst.cc/")
 }
