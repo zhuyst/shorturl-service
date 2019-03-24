@@ -31,7 +31,7 @@ func TestUrlStorage_GenerateShortUrl(t *testing.T) {
 		return
 	}
 
-	keySplit := strings.Split(shortUrl, urlStorage.domain)
+	keySplit := strings.Split(shortUrl, urlStorage.shortUrlPrefix)
 	if len(keySplit) != 2 {
 		t.Errorf("UrlStorage_GenerateShortUrl ERROR, "+
 			"expected len(keySplit) == 2, got %d", len(keySplit))
@@ -61,7 +61,7 @@ func TestUrlStorage_GetLongUrlByKey(t *testing.T) {
 		return
 	}
 
-	key := strings.Split(shortUrl, urlStorage.domain)[1]
+	key := strings.Split(shortUrl, urlStorage.shortUrlPrefix)[1]
 	longUrlFromStorage, err := urlStorage.GetLongUrlByKey(key)
 	if err != nil {
 		t.Errorf("UrlStorage_GetLongUrlByKey ERROR: %s", err.Error())
@@ -86,5 +86,5 @@ func newUrlStorage() (*UrlStorage, error) {
 		Addr: ms.Addr(),
 	})
 
-	return New(redisClient, "d.zhuyst.cc")
+	return New(redisClient, "https://d.zhuyst.cc/")
 }
