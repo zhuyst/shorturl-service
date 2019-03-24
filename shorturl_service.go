@@ -44,7 +44,8 @@ func InitRouter(router *gin.Engine, redisClient *redis.Client, option *Option) e
 		return err
 	}
 
-	urlStorage, err := url_storage.New(redisClient, option.Domain)
+	shortUrlPrefix := fmt.Sprintf("https://%s%s", option.Domain, option.ServiceUri)
+	urlStorage, err := url_storage.New(redisClient, shortUrlPrefix)
 	if err != nil {
 		return err
 	}
@@ -57,9 +58,9 @@ func InitRouter(router *gin.Engine, redisClient *redis.Client, option *Option) e
 }
 
 type result struct {
-	code    int
-	message string
-	url     string
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Url     string `json:"url"`
 }
 
 func (option *Option) redirectLongUrl(c *gin.Context) {
@@ -70,39 +71,39 @@ func (option *Option) redirectLongUrl(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusMovedPermanently, longUrl)
+	c.Redirect(http.StatusMovedPermanently, longUrl)
 }
 
 func (option *Option) generateShortUrl(c *gin.Context) {
 	longUrl, exists := c.GetPostForm("url")
 	if !exists {
-		c.JSON(http.StatusBadRequest, result{
-			code:    http.StatusBadRequest,
-			message: "required url",
+		c.JSON(http.StatusBadRequest, &result{
+			Code:    http.StatusBadRequest,
+			Message: "required url",
 		})
 		return
 	}
 
 	if !option.LongUrlRegexp.MatchString(longUrl) {
-		c.JSON(http.StatusBadRequest, result{
-			code:    http.StatusBadRequest,
-			message: "need prefix with https://",
+		c.JSON(http.StatusBadRequest, &result{
+			Code:    http.StatusBadRequest,
+			Message: "need prefix with https://",
 		})
 		return
 	}
 
 	shortUrl, err := option.urlStorage.GenerateShortUrl(longUrl)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, result{
-			code:    http.StatusInternalServerError,
-			message: err.Error(),
+		c.JSON(http.StatusInternalServerError, &result{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, result{
-		code:    http.StatusOK,
-		message: "OK",
-		url:     shortUrl,
+	c.JSON(http.StatusOK, &result{
+		Code:    http.StatusOK,
+		Message: "OK",
+		Url:     shortUrl,
 	})
 }

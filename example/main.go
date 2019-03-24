@@ -26,4 +26,8 @@ func main() {
 	}); err != nil {
 		log.Fatalf("shorturl_service init FAIL: %s", err.Error())
 	}
+
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("gin init FAIL: %s", err.Error())
+	}
 }

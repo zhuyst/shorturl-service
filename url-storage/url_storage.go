@@ -11,12 +11,12 @@ const (
 )
 
 type UrlStorage struct {
-	domain       string
-	redisClient  *redis.Client
-	keyGenerator *key_generator.KeyGenerator
+	shortUrlPrefix string
+	redisClient    *redis.Client
+	keyGenerator   *key_generator.KeyGenerator
 }
 
-func New(redisClient *redis.Client, domain string) (*UrlStorage, error) {
+func New(redisClient *redis.Client, shortUrlPrefix string) (*UrlStorage, error) {
 	if err := redisClient.Ping().Err(); err != nil {
 		return nil, err
 	}
@@ -27,9 +27,9 @@ func New(redisClient *redis.Client, domain string) (*UrlStorage, error) {
 	}
 
 	return &UrlStorage{
-		domain:       domain,
-		redisClient:  redisClient,
-		keyGenerator: keyGenerator,
+		shortUrlPrefix: shortUrlPrefix,
+		redisClient:    redisClient,
+		keyGenerator:   keyGenerator,
 	}, nil
 }
 
@@ -39,7 +39,7 @@ func (storage *UrlStorage) GenerateShortUrl(longUrl string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf(storage.domain + key), nil
+	return fmt.Sprintf(storage.shortUrlPrefix + key), nil
 }
 
 func (storage *UrlStorage) GetLongUrlByKey(key string) (string, error) {
