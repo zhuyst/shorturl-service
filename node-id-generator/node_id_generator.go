@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/satori/go.uuid"
 	"github.com/zhuyst/redsync"
 	"time"
 )
@@ -12,7 +13,7 @@ const (
 	nodeIdKeyPrefix = "SHORTURL_SERVICE:NODE_ID"
 	nodeIdLockKey   = "SHORTURL_SERVICE:NODE_ID_LOCK"
 
-	holdKeyTime = time.Minute * 5
+	holdKeyTime = time.Second * 60
 )
 
 type NodeIdGenerator struct {
@@ -23,6 +24,7 @@ type NodeIdGenerator struct {
 	mutex       *redsync.Mutex
 
 	nodeIdKey  string
+	nodeUUID   string
 	nodeHolder *time.Ticker
 }
 
@@ -71,15 +73,20 @@ func (generator *NodeIdGenerator) Generate() (int64, error) {
 }
 
 func (generator *NodeIdGenerator) startNodeHolder() error {
+	nodeIdKey := generator.nodeIdKey
 	if generator.nodeIdKey == "" {
 		return errors.New("need nodeIdKey to startNodeHolder")
 	}
 
+	nodeUUID := uuid.NewV4().String()
+	generator.nodeUUID = nodeUUID
+
+	redisClient := generator.redisClient
 	setFunc := func() error {
-		return generator.redisClient.Set(generator.nodeIdKey, true, holdKeyTime).Err()
+		return redisClient.Set(nodeIdKey, nodeUUID, holdKeyTime).Err()
 	}
 
-	renewTime := holdKeyTime - 30*time.Second
+	renewTime := holdKeyTime - 20*time.Second
 	nodeHolder := time.NewTicker(renewTime)
 	generator.nodeHolder = nodeHolder
 
@@ -89,6 +96,19 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 
 	go func() {
 		for range nodeHolder.C {
+			nodeUUIDFromRedis, err := redisClient.Get(nodeIdKey).Result()
+			if err != nil {
+				panic(err)
+				return
+			}
+
+			if nodeUUIDFromRedis != generator.nodeUUID {
+				err := fmt.Errorf("nodeUUIDFromRedis: %s != generator.nodeUUID: %s",
+					nodeUUIDFromRedis, generator.nodeUUID)
+				panic(err)
+				return
+			}
+
 			if err := setFunc(); err != nil {
 				panic(err)
 			}
