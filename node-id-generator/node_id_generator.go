@@ -6,6 +6,9 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/satori/go.uuid"
 	"github.com/zhuyst/redsync"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -66,6 +69,11 @@ func (generator *NodeIdGenerator) Generate() (int64, error) {
 		if err := generator.startNodeHolder(); err != nil {
 			return -1, err
 		}
+
+		if err := generator.startListenSignal(); err != nil {
+			return -1, err
+		}
+
 		return generator.NodeId, nil
 	}
 
@@ -74,7 +82,7 @@ func (generator *NodeIdGenerator) Generate() (int64, error) {
 
 func (generator *NodeIdGenerator) startNodeHolder() error {
 	nodeIdKey := generator.nodeIdKey
-	if generator.nodeIdKey == "" {
+	if nodeIdKey == "" {
 		return errors.New("need nodeIdKey to startNodeHolder")
 	}
 
@@ -112,6 +120,28 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 			if err := setFunc(); err != nil {
 				panic(err)
 			}
+		}
+	}()
+
+	return nil
+}
+
+func (generator *NodeIdGenerator) startListenSignal() error {
+	nodeIdKey := generator.nodeIdKey
+	if nodeIdKey == "" {
+		return errors.New("need nodeIdKey to startListenSignal")
+	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGKILL,
+		syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+	go func() {
+		for range c {
+			if err := generator.redisClient.Del(generator.nodeIdKey).Err(); err != nil {
+				panic(err)
+				return
+			}
+			os.Exit(0)
 		}
 	}()
 
