@@ -19,7 +19,7 @@ curl -X POST \
 {"code":200,"message":"OK","url":"https://d.zhuyst.cc/4dUaeq5"}
 ```
 
-2. 在浏览器中输入[d.zhuyst.cc/4dUaeq5](d.zhuyst.cc/4dUaeq5)
+2. 在浏览器中输入<a href="https://d.zhuyst.cc/4dUaeq5" target="_blank">d.zhuyst.cc/4dUaeq5</a>
 
 ## 在原有服务添加短URL服务
 
