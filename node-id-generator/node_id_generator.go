@@ -1,7 +1,6 @@
 package node_id_generator
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/satori/go.uuid"
@@ -13,20 +12,26 @@ import (
 )
 
 const (
-	nodeIdKeyPrefix = "SHORTURL_SERVICE:NODE_ID"
-	nodeIdLockKey   = "SHORTURL_SERVICE:NODE_ID_LOCK"
+	nodeIdKeyPrefix     = "SHORTURL_SERVICE:NODE_ID"
+	nodeIdLockKeyPrefix = "SHORTURL_SERVICE:NODE_ID_LOCK"
+
+	getNodeIdLockKey = "SHORTURL_SERVICE:GET_NODE_ID_LOCK"
 
 	holdKeyTime = time.Second * 60
 )
 
 type NodeIdGenerator struct {
-	nodeId int64
+	nodeId  int64
+	nodeMax int64
 
-	nodeMax     int64
-	redisClient *redis.Client
-	mutex       *redsync.Mutex
+	redisClient    *redis.Client
+	redSync        *redsync.RedSync
+	getNodeIdMutex *redsync.Mutex
 
-	nodeIdKey  string
+	nodeIdKey     string
+	nodeIdLockKey string
+	nodeIdMutex   *redsync.Mutex
+
 	nodeUUID   string
 	nodeHolder *time.Ticker
 }
@@ -35,18 +40,19 @@ func New(redisClient *redis.Client, nodeMax int64) *NodeIdGenerator {
 	redSync := redsync.New(redisClient)
 
 	return &NodeIdGenerator{
-		nodeId:      -1,
-		nodeMax:     nodeMax,
-		redisClient: redisClient,
-		mutex:       redSync.NewMutex(nodeIdLockKey),
+		nodeId:         -1,
+		nodeMax:        nodeMax,
+		redisClient:    redisClient,
+		redSync:        redSync,
+		getNodeIdMutex: redSync.NewMutex(getNodeIdLockKey),
 	}
 }
 
 func (generator *NodeIdGenerator) GetNodeId() (int64, error) {
-	if err := generator.mutex.Lock(); err != nil {
+	if err := generator.getNodeIdMutex.Lock(); err != nil {
 		return -1, err
 	}
-	defer generator.mutex.Unlock()
+	defer generator.getNodeIdMutex.Unlock()
 
 	if generator.nodeId != -1 {
 		return generator.nodeId, nil
@@ -90,43 +96,23 @@ func (generator *NodeIdGenerator) generateNodeId() (int64, error) {
 }
 
 func (generator *NodeIdGenerator) startNodeHolder() error {
-	nodeIdKey := generator.nodeIdKey
-	if nodeIdKey == "" {
-		return errors.New("need nodeIdKey to startNodeHolder")
-	}
-
 	nodeUUID := uuid.NewV4().String()
 	generator.nodeUUID = nodeUUID
-
-	redisClient := generator.redisClient
-	setFunc := func() error {
-		return redisClient.Set(nodeIdKey, nodeUUID, holdKeyTime).Err()
-	}
 
 	renewTime := holdKeyTime - 20*time.Second
 	nodeHolder := time.NewTicker(renewTime)
 	generator.nodeHolder = nodeHolder
 
-	if err := setFunc(); err != nil {
+	if err := generator.setNodeId(); err != nil {
 		return err
 	}
 
+	generator.nodeIdLockKey = fmt.Sprintf("%s:%d", nodeIdLockKeyPrefix, generator.nodeId)
+	generator.nodeIdMutex = generator.redSync.NewMutex(generator.nodeIdLockKey)
+
 	go func() {
 		for range nodeHolder.C {
-			nodeUUIDFromRedis, err := redisClient.Get(nodeIdKey).Result()
-			if err != nil {
-				panic(err)
-				return
-			}
-
-			if nodeUUIDFromRedis != generator.nodeUUID {
-				err := fmt.Errorf("nodeUUIDFromRedis: %s != generator.nodeUUID: %s",
-					nodeUUIDFromRedis, generator.nodeUUID)
-				panic(err)
-				return
-			}
-
-			if err := setFunc(); err != nil {
+			if err := generator.setNodeId(); err != nil {
 				panic(err)
 			}
 		}
@@ -135,12 +121,34 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 	return nil
 }
 
-func (generator *NodeIdGenerator) startListenSignal() error {
-	nodeIdKey := generator.nodeIdKey
-	if nodeIdKey == "" {
-		return errors.New("need nodeIdKey to startListenSignal")
+func (generator *NodeIdGenerator) setNodeId() error {
+	return generator.redisClient.Set(generator.nodeIdKey, generator.nodeUUID, holdKeyTime).Err()
+}
+
+func (generator *NodeIdGenerator) resetNodeId() error {
+	if err := generator.nodeIdMutex.Lock(); err != nil {
+		return err
+	}
+	defer generator.nodeIdMutex.Unlock()
+
+	nodeUUIDFromRedis, err := generator.redisClient.Get(generator.nodeIdKey).Result()
+	if err != nil {
+		return err
 	}
 
+	if nodeUUIDFromRedis != generator.nodeUUID {
+		return fmt.Errorf("nodeUUIDFromRedis: %s != generator.nodeUUID: %s",
+			nodeUUIDFromRedis, generator.nodeUUID)
+	}
+
+	if err := generator.setNodeId(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (generator *NodeIdGenerator) startListenSignal() error {
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGKILL,
 		syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
