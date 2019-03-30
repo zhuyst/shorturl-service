@@ -7,10 +7,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
+const nodeMax int64 = 8
+
 func TestNodeIdGenerator_GetNodeId(t *testing.T) {
-	var nodeMax int64 = 8
 	redisClient := helper.NewTestRedisClient()
 
 	nodeId, err := testGenerate(redisClient, nodeMax)
@@ -23,7 +25,6 @@ func TestNodeIdGenerator_GetNodeId(t *testing.T) {
 }
 
 func TestNodeIdGenerator_MultiGenerate(t *testing.T) {
-	var nodeMax int64 = 8
 	redisClient := helper.NewTestRedisClient()
 
 	var nodeIds []int64
@@ -61,6 +62,26 @@ func TestNodeIdGenerator_MultiGenerate(t *testing.T) {
 	}
 
 	t.Logf("NodeIdGenerator_MultiGenerate PASS")
+}
+
+func TestNodeIdGenerator_NodeHolder(t *testing.T) {
+	redisClient := helper.NewTestRedisClient()
+
+	generator := New(redisClient, nodeMax)
+	nodeId, err := generator.GetNodeId()
+	if err != nil {
+		t.Errorf("NodeIdGenerator_GetNodeId ERROR: %s", err.Error())
+		return
+	}
+
+	time.Sleep(holdKeyTime)
+
+	if nodeId != generator.nodeId {
+		t.Errorf("NodeIdGenerator_NodeHolder ERROR, "+
+			"expected generator.nodeId == %d, got %d", nodeId, generator.nodeId)
+		return
+	}
+	t.Logf("NodeIdGenerator_NodeHolder PASS")
 }
 
 func testGenerate(redisClient *redis.Client, nodeMax int64) (int64, error) {
