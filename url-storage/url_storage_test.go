@@ -1,7 +1,7 @@
 package url_storage
 
 import (
-	"shorturl_service/helper"
+	"github.com/zhuyst/shorturl-service/helper"
 	"strings"
 	"testing"
 )

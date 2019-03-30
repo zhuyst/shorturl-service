@@ -3,7 +3,7 @@ package key_generator
 import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/go-redis/redis"
-	"shorturl_service/node-id-generator"
+	"github.com/zhuyst/shorturl-service/node-id-generator"
 )
 
 var nodeMax int64

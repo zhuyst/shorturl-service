@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/zhuyst/shorturl-service/url-storage"
 	"regexp"
-	"shorturl_service/url-storage"
 )
 
 var (

@@ -3,7 +3,7 @@ package url_storage
 import (
 	"fmt"
 	"github.com/go-redis/redis"
-	"shorturl_service/key-generator"
+	"github.com/zhuyst/shorturl-service/key-generator"
 )
 
 const (

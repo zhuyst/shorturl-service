@@ -2,7 +2,7 @@ package shorturl_service
 
 import (
 	"github.com/gin-gonic/gin"
-	"shorturl_service/helper"
+	"github.com/zhuyst/shorturl-service/helper"
 	"testing"
 )
 

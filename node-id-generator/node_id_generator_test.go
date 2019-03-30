@@ -3,7 +3,7 @@ package node_id_generator
 import (
 	"fmt"
 	"github.com/go-redis/redis"
-	"shorturl_service/helper"
+	"github.com/zhuyst/shorturl-service/helper"
 	"sync"
 	"sync/atomic"
 	"testing"

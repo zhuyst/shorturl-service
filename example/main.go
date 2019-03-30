@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/zhuyst/shorturl-service"
 	"log"
 	"regexp"
-	"shorturl_service"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 package key_generator
 
 import (
-	"shorturl_service/helper"
+	"github.com/zhuyst/shorturl-service/helper"
 	"sync"
 	"sync/atomic"
 	"testing"
