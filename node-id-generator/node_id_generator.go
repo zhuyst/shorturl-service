@@ -112,7 +112,7 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 
 	go func() {
 		for range nodeHolder.C {
-			if err := generator.setNodeId(); err != nil {
+			if err := generator.resetNodeId(); err != nil {
 				panic(err)
 			}
 		}
