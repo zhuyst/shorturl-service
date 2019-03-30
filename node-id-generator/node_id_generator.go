@@ -20,7 +20,7 @@ const (
 )
 
 type NodeIdGenerator struct {
-	NodeId int64
+	nodeId int64
 
 	nodeMax     int64
 	redisClient *redis.Client
@@ -35,18 +35,27 @@ func New(redisClient *redis.Client, nodeMax int64) *NodeIdGenerator {
 	redSync := redsync.New(redisClient)
 
 	return &NodeIdGenerator{
+		nodeId:      -1,
 		nodeMax:     nodeMax,
 		redisClient: redisClient,
 		mutex:       redSync.NewMutex(nodeIdLockKey),
 	}
 }
 
-func (generator *NodeIdGenerator) Generate() (int64, error) {
+func (generator *NodeIdGenerator) GetNodeId() (int64, error) {
 	if err := generator.mutex.Lock(); err != nil {
 		return -1, err
 	}
 	defer generator.mutex.Unlock()
 
+	if generator.nodeId != -1 {
+		return generator.nodeId, nil
+	}
+
+	return generator.generateNodeId()
+}
+
+func (generator *NodeIdGenerator) generateNodeId() (int64, error) {
 	// 询问从0到nodeMax是否有坑位
 	var i int64
 	for i = 0; i < generator.nodeMax; i++ {
@@ -64,7 +73,7 @@ func (generator *NodeIdGenerator) Generate() (int64, error) {
 		}
 
 		// 开始生成NodeId
-		generator.NodeId = i
+		generator.nodeId = i
 		generator.nodeIdKey = key
 		if err := generator.startNodeHolder(); err != nil {
 			return -1, err
@@ -74,7 +83,7 @@ func (generator *NodeIdGenerator) Generate() (int64, error) {
 			return -1, err
 		}
 
-		return generator.NodeId, nil
+		return generator.nodeId, nil
 	}
 
 	return -1, fmt.Errorf("nodeNumber reached the maximum: %d", generator.nodeMax)

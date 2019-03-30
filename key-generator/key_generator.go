@@ -29,7 +29,7 @@ type KeyGenerator struct {
 
 func New(redisClient *redis.Client) (*KeyGenerator, error) {
 	nodeIdGenerator := node_id_generator.New(redisClient, nodeMax)
-	nodeId, err := nodeIdGenerator.Generate()
+	nodeId, err := nodeIdGenerator.GetNodeId()
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestNodeIdGenerator_Generate(t *testing.T) {
+func TestNodeIdGenerator_GetNodeId(t *testing.T) {
 	var nodeMax int64 = 8
 	redisClient := helper.NewTestRedisClient()
 
@@ -19,7 +19,7 @@ func TestNodeIdGenerator_Generate(t *testing.T) {
 		return
 	}
 
-	t.Logf("NodeIdGenerator_Generate PASS, nodeId: %d", nodeId)
+	t.Logf("NodeIdGenerator_GetNodeId PASS, nodeId: %d", nodeId)
 }
 
 func TestNodeIdGenerator_MultiGenerate(t *testing.T) {
@@ -65,13 +65,13 @@ func TestNodeIdGenerator_MultiGenerate(t *testing.T) {
 
 func testGenerate(redisClient *redis.Client, nodeMax int64) (int64, error) {
 	generator := New(redisClient, nodeMax)
-	nodeId, err := generator.Generate()
+	nodeId, err := generator.GetNodeId()
 	if err != nil {
-		return -1, fmt.Errorf("NodeIdGenerator_Generate ERROR: %s", err.Error())
+		return -1, fmt.Errorf("NodeIdGenerator_GetNodeId ERROR: %s", err.Error())
 	}
 
 	if nodeId < 0 || nodeId > nodeMax {
-		return -1, fmt.Errorf("NodeIdGenerator_Generate ERROR, "+
+		return -1, fmt.Errorf("NodeIdGenerator_GetNodeId ERROR, "+
 			"expected 0 <= nodeId <= %d, got %d", nodeMax, nodeId)
 	}
 
