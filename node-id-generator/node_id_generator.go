@@ -5,6 +5,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/satori/go.uuid"
 	"github.com/zhuyst/redsync"
+	"github.com/zhuyst/shorturl-service/logger"
 	"os"
 	"os/signal"
 	"syscall"
@@ -70,6 +71,7 @@ func (generator *NodeIdGenerator) generateNodeId() (int64, error) {
 		// 有Node占了坑位，跳过
 		err := generator.redisClient.Get(key).Err()
 		if err == nil {
+			logger.Info("generateNodeId: NodeId %d exists, skip", i)
 			continue
 		}
 
@@ -82,13 +84,16 @@ func (generator *NodeIdGenerator) generateNodeId() (int64, error) {
 		generator.nodeId = i
 		generator.nodeIdKey = key
 		if err := generator.startNodeHolder(); err != nil {
+			logger.Error("startNodeHolder FAIL, NodeId: %d, Error: %s", i, err.Error())
 			return -1, err
 		}
 
 		if err := generator.startListenSignal(); err != nil {
+			logger.Error("startListenSignal FAIL, NodeId: %d, Error: %s", i, err.Error())
 			return -1, err
 		}
 
+		logger.Info("generateNodeId: Get NodeId: %d", i)
 		return generator.nodeId, nil
 	}
 
@@ -110,11 +115,15 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 	generator.nodeIdLockKey = fmt.Sprintf("%s:%d", nodeIdLockKeyPrefix, generator.nodeId)
 	generator.nodeIdMutex = generator.redSync.NewMutex(generator.nodeIdLockKey)
 
+	logger.Info("startNodeHolder, NodeId: %d, NodeUUID: %s", generator.nodeId, nodeUUID)
+
 	go func() {
 		for range nodeHolder.C {
 			if err := generator.resetNodeId(); err != nil {
+				logger.Error("NodeHolder ERROR, NodeId: %d, Error: %s", generator.nodeId, err.Error())
 				panic(err)
 			}
+			logger.Info("NodeHolder resetNodeId, NodeId: %d", generator.nodeId)
 		}
 	}()
 
@@ -155,9 +164,12 @@ func (generator *NodeIdGenerator) startListenSignal() error {
 	go func() {
 		for range c {
 			if err := generator.redisClient.Del(generator.nodeIdKey).Err(); err != nil {
+				logger.Error("ClearNodeId FAIL, Error: %s", err.Error())
 				panic(err)
 				return
 			}
+
+			logger.Info("ClearNodeId SUCCESS, NodeId: %d", generator.nodeId)
 			os.Exit(0)
 		}
 	}()

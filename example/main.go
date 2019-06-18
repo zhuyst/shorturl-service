@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/zhuyst/shorturl-service"
-	"log"
+	"github.com/zhuyst/shorturl-service/logger"
 	"regexp"
 )
 
@@ -14,7 +14,7 @@ func main() {
 	})
 
 	if err := redisClient.Ping().Err(); err != nil {
-		log.Fatalf("redisClient ping FAIL: %s", err.Error())
+		logger.Fatal("redisClient ping FAIL: %s", err.Error())
 		return
 	}
 
@@ -24,10 +24,10 @@ func main() {
 		ServiceUri:    "/",
 		LongUrlRegexp: regexp.MustCompile("https://.*"),
 	}); err != nil {
-		log.Fatalf("shorturl_service init FAIL: %s", err.Error())
+		logger.Fatal("shorturl_service init FAIL: %s", err.Error())
 	}
 
 	if err := r.Run(":8080"); err != nil {
-		log.Fatalf("gin init FAIL: %s", err.Error())
+		logger.Fatal("gin init FAIL: %s", err.Error())
 	}
 }
