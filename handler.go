@@ -2,6 +2,7 @@ package shorturl_service
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/zhuyst/shorturl-service/logger"
 	"net/http"
 )
 
@@ -42,6 +43,8 @@ func (option *Option) generateShortUrl(c *gin.Context) {
 
 	shortUrl, err := option.urlStorage.GenerateShortUrl(longUrl)
 	if err != nil {
+		logger.Error("generateShortUrl FAIL, longUrl: %s, Error: %s", longUrl, err.Error())
+
 		c.JSON(http.StatusInternalServerError, &result{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
@@ -49,6 +52,7 @@ func (option *Option) generateShortUrl(c *gin.Context) {
 		return
 	}
 
+	logger.Info("generateShortUrl SUCCESS, %s - %s", shortUrl, longUrl)
 	c.JSON(http.StatusOK, &result{
 		Code:    http.StatusOK,
 		Message: "OK",

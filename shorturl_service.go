@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/zhuyst/shorturl-service/logger"
 	"github.com/zhuyst/shorturl-service/url-storage"
 	"regexp"
 )
@@ -18,6 +19,8 @@ type Option struct {
 	LongUrlRegexp *regexp.Regexp
 	Domain        string
 	ServiceUri    string
+
+	Logger logger.Logger
 
 	urlStorage *url_storage.UrlStorage
 }
@@ -40,6 +43,10 @@ func (option *Option) initConfig(redisClient *redis.Client) error {
 
 	if option.ServiceUri == "" {
 		option.ServiceUri = defaultServiceUri
+	}
+
+	if option.Logger == nil {
+		option.Logger = logger.NewDefaultLogger()
 	}
 
 	if option.Domain == "" {
