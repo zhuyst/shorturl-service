@@ -8,6 +8,7 @@ import (
 	"github.com/zhuyst/shorturl-service/logger"
 	"github.com/zhuyst/shorturl-service/url-storage"
 	"regexp"
+	"time"
 )
 
 var (
@@ -16,9 +17,10 @@ var (
 )
 
 type Option struct {
-	LongUrlRegexp *regexp.Regexp
-	Domain        string
-	ServiceUri    string
+	LongUrlRegexp    *regexp.Regexp
+	Domain           string
+	ServiceUri       string
+	Long2ShortExpire time.Duration
 
 	Logger logger.Logger
 

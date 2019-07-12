@@ -6,6 +6,7 @@ import (
 	"github.com/zhuyst/shorturl-service"
 	"github.com/zhuyst/shorturl-service/logger"
 	"regexp"
+	"time"
 )
 
 func main() {
@@ -20,9 +21,10 @@ func main() {
 
 	r := gin.Default()
 	if err := shorturl_service.InitRouter(r, redisClient, &shorturl_service.Option{
-		Domain:        "d.zhuyst.cc",
-		ServiceUri:    "/",
-		LongUrlRegexp: regexp.MustCompile("https://.*"),
+		Domain:           "d.zhuyst.cc",
+		ServiceUri:       "/",
+		LongUrlRegexp:    regexp.MustCompile("https://.*"),
+		Long2ShortExpire: time.Hour * 24 * 7,
 	}); err != nil {
 		logger.Fatal("shorturl_service init FAIL: %s", err.Error())
 	}

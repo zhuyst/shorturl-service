@@ -4,6 +4,7 @@ import (
 	"github.com/zhuyst/shorturl-service/helper"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewUrlStorage(t *testing.T) {
@@ -44,6 +45,36 @@ func TestUrlStorage_GenerateShortUrl(t *testing.T) {
 	}
 
 	t.Logf("UrlStorage_GenerateShortUrl PASS, url: %s", shortUrl)
+}
+
+func TestUrlStorage_GenerateShortUrlAgain(t *testing.T) {
+	urlStorage, err := newUrlStorage()
+	if err != nil {
+		t.Errorf("NewUrlStorage ERROR: %s", err.Error())
+		return
+	}
+
+	longUrl := "https://github.com/zhuyst"
+	getNewShortUrl := func() string {
+		shortUrl, err := urlStorage.GenerateShortUrl(longUrl)
+		if err != nil {
+			t.Fatalf("UrlStorage_GenerateShortUrl ERROR: %s", err.Error())
+		}
+		return shortUrl
+	}
+	firstShortUrl := getNewShortUrl()
+
+	for i := 0; i < 3; i++ {
+		time.Sleep(time.Second)
+		newShortUrl := getNewShortUrl()
+		if firstShortUrl != newShortUrl {
+			t.Fatalf("TestUrlStorage_GenerateShortUrlAgain ERROR, "+
+				"expected firstShortUrl == newShortUrl, "+
+				"got first: %s, new: %s", firstShortUrl, newShortUrl)
+		}
+	}
+
+	t.Logf("TestUrlStorage_GenerateShortUrlAgain PASS, url: %s", firstShortUrl)
 }
 
 func TestUrlStorage_GetLongUrlByKey(t *testing.T) {
