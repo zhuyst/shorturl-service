@@ -8,21 +8,12 @@ import (
 )
 
 func TestNewUrlStorage(t *testing.T) {
-	_, err := newUrlStorage()
-	if err != nil {
-		t.Errorf("NewUrlStorage ERROR: %s", err.Error())
-		return
-	}
-
+	newUrlStorage(t)
 	t.Logf("NewUrlStorage PASS")
 }
 
 func TestUrlStorage_GenerateShortUrl(t *testing.T) {
-	urlStorage, err := newUrlStorage()
-	if err != nil {
-		t.Errorf("NewUrlStorage ERROR: %s", err.Error())
-		return
-	}
+	urlStorage := newUrlStorage(t)
 
 	longUrl := "https://github.com/zhuyst"
 	shortUrl, err := urlStorage.GenerateShortUrl(longUrl)
@@ -48,11 +39,7 @@ func TestUrlStorage_GenerateShortUrl(t *testing.T) {
 }
 
 func TestUrlStorage_GenerateShortUrlAgain(t *testing.T) {
-	urlStorage, err := newUrlStorage()
-	if err != nil {
-		t.Errorf("NewUrlStorage ERROR: %s", err.Error())
-		return
-	}
+	urlStorage := newUrlStorage(t)
 
 	longUrl := "https://github.com/zhuyst"
 	getNewShortUrl := func() string {
@@ -78,11 +65,7 @@ func TestUrlStorage_GenerateShortUrlAgain(t *testing.T) {
 }
 
 func TestUrlStorage_GetLongUrlByKey(t *testing.T) {
-	urlStorage, err := newUrlStorage()
-	if err != nil {
-		t.Errorf("NewUrlStorage ERROR: %s", err.Error())
-		return
-	}
+	urlStorage := newUrlStorage(t)
 
 	longUrl := "https://github.com/zhuyst"
 	shortUrl, err := urlStorage.GenerateShortUrl(longUrl)
@@ -106,7 +89,14 @@ func TestUrlStorage_GetLongUrlByKey(t *testing.T) {
 	t.Logf("UrlStorage_GetLongUrlByKey PASS, shortUrl: %s, longUrl: %s", shortUrl, longUrl)
 }
 
-func newUrlStorage() (*UrlStorage, error) {
+func newUrlStorage(t *testing.T) *UrlStorage {
 	redisClient := helper.NewTestRedisClient()
-	return New(redisClient, "https://d.zhuyst.cc/")
+
+	urlStorage, err := New(redisClient, "https://d.zhuyst.cc/")
+	if err != nil {
+		t.Fatalf("NewUrlStorage ERROR: %s", err.Error())
+		return nil
+	}
+
+	return urlStorage
 }

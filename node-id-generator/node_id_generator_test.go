@@ -1,7 +1,6 @@
 package node_id_generator
 
 import (
-	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/zhuyst/shorturl-service/helper"
 	"sync"
@@ -14,13 +13,7 @@ const nodeMax int64 = 8
 
 func TestNodeIdGenerator_GetNodeId(t *testing.T) {
 	redisClient := helper.NewTestRedisClient()
-
-	nodeId, err := testGenerate(redisClient, nodeMax)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-
+	nodeId := testGenerate(t, redisClient, nodeMax)
 	t.Logf("NodeIdGenerator_GetNodeId PASS, nodeId: %d", nodeId)
 }
 
@@ -40,12 +33,7 @@ func TestNodeIdGenerator_MultiGenerate(t *testing.T) {
 			j := atomic.LoadInt64(&generatorId)
 			atomic.AddInt64(&generatorId, 1)
 
-			nodeId, err := testGenerate(redisClient, nodeMax)
-			if err != nil {
-				t.Error(err.Error())
-				return
-			}
-
+			nodeId := testGenerate(t, redisClient, nodeMax)
 			nodeIds = append(nodeIds, nodeId)
 			t.Logf("NodeIdGenerator_MultiGenerate %d: %d", j, nodeId)
 		}()
@@ -84,17 +72,19 @@ func TestNodeIdGenerator_NodeHolder(t *testing.T) {
 	t.Logf("NodeIdGenerator_NodeHolder PASS")
 }
 
-func testGenerate(redisClient *redis.Client, nodeMax int64) (int64, error) {
+func testGenerate(t *testing.T, redisClient *redis.Client, nodeMax int64) int64 {
 	generator := New(redisClient, nodeMax)
 	nodeId, err := generator.GetNodeId()
 	if err != nil {
-		return -1, fmt.Errorf("NodeIdGenerator_GetNodeId ERROR: %s", err.Error())
+		t.Fatalf("NodeIdGenerator_GetNodeId ERROR: %s", err.Error())
+		return -1
 	}
 
 	if nodeId < 0 || nodeId > nodeMax {
-		return -1, fmt.Errorf("NodeIdGenerator_GetNodeId ERROR, "+
+		t.Fatalf("NodeIdGenerator_GetNodeId ERROR, "+
 			"expected 0 <= nodeId <= %d, got %d", nodeMax, nodeId)
+		return -1
 	}
 
-	return nodeId, nil
+	return nodeId
 }

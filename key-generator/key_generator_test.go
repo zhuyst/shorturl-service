@@ -1,6 +1,7 @@
 package key_generator
 
 import (
+	"github.com/go-redis/redis"
 	"github.com/zhuyst/shorturl-service/helper"
 	"sync"
 	"sync/atomic"
@@ -8,31 +9,17 @@ import (
 )
 
 func TestNewKeyGenerator(t *testing.T) {
-	generator, err := newKeyGenerator()
-	if err != nil {
-		t.Errorf("NewKeyGenerator ERROR: %s", err.Error())
-		return
-	}
-
+	generator := newKeyGenerator(t, nil)
 	t.Logf("NewKeyGenerator PASS, NodeId: %d", generator.NodeId)
 }
 
 func TestKeyGenerator_Generate(t *testing.T) {
-	generator, err := newKeyGenerator()
-	if err != nil {
-		t.Errorf("NewKeyGenerator ERROR: %s", err.Error())
-		return
-	}
-
+	generator := newKeyGenerator(t, nil)
 	t.Logf("KeyGenerator_Generate PASS, key: %s", generator.Generate())
 }
 
 func TestMultiGenerate(t *testing.T) {
-	generator, err := newKeyGenerator()
-	if err != nil {
-		t.Errorf("NewKeyGenerator ERROR: %s", err.Error())
-		return
-	}
+	generator := newKeyGenerator(t, nil)
 
 	for i := 1; i <= 1000; i++ {
 		t.Logf("MultiGenerate %d, ID: %s", i, generator.Generate())
@@ -53,11 +40,7 @@ func TestMultiKeyGenerator(t *testing.T) {
 			atomic.AddInt32(&generatorId, 1)
 			j := atomic.LoadInt32(&generatorId)
 
-			generator, err := New(redisClient)
-			if err != nil {
-				t.Fatalf("NewKeyGenerator %d ERROR: %s", j, err.Error())
-				return
-			}
+			generator := newKeyGenerator(t, redisClient)
 			t.Logf("MultiKeyGenerator %d, NodeId: %d", j, generator.NodeId)
 			generators = append(generators, generator)
 		}()
@@ -88,11 +71,7 @@ func TestMultiKeyGenerator_Generate(t *testing.T) {
 	redisClient := helper.NewTestRedisClient()
 	for i := 0; i < generatorNumber; i++ {
 		go func() {
-			generator, err := New(redisClient)
-			if err != nil {
-				t.Fatalf("NewKeyGenerator ERROR: %s", err.Error())
-				return
-			}
+			generator := newKeyGenerator(t, redisClient)
 
 			for z := 0; z < generateNumber; z++ {
 				go func() {
@@ -122,7 +101,15 @@ func TestMultiKeyGenerator_Generate(t *testing.T) {
 	t.Log("MultiKeyGenerator_Generate PASS")
 }
 
-func newKeyGenerator() (*KeyGenerator, error) {
-	redisClient := helper.NewTestRedisClient()
-	return New(redisClient)
+func newKeyGenerator(t *testing.T, redisClient *redis.Client) *KeyGenerator {
+	if redisClient == nil {
+		redisClient = helper.NewTestRedisClient()
+	}
+
+	keyGenerator, err := New(redisClient)
+	if err != nil {
+		t.Fatalf("NewKeyGenerator ERROR: %s", err.Error())
+		return nil
+	}
+	return keyGenerator
 }
