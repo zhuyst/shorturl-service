@@ -13,14 +13,20 @@ import (
 )
 
 const (
-	nodeIdKeyPrefix     = "SHORTURL_SERVICE:NODE_ID"
+	// nodeIdKeyPrefix 节点ID占用位
+	nodeIdKeyPrefix = "SHORTURL_SERVICE:NODE_ID"
+
+	// nodeIdLockKeyPrefix 节点ID占用分布式锁
 	nodeIdLockKeyPrefix = "SHORTURL_SERVICE:NODE_ID_LOCK"
 
+	// getNodeIdLockKey 获取节点ID统一分布式锁
 	getNodeIdLockKey = "SHORTURL_SERVICE:GET_NODE_ID_LOCK"
 
+	// holdKeyTime 一个节点每次能保持/续约的时间
 	holdKeyTime = time.Second * 60
 )
 
+// NodeIdGenerator 节点ID生成器
 type NodeIdGenerator struct {
 	nodeId  int64
 	nodeMax int64
@@ -37,6 +43,7 @@ type NodeIdGenerator struct {
 	nodeHolder *time.Ticker
 }
 
+// New 实例化一个NodeIdGenerator
 func New(redisClient *redis.Client, nodeMax int64) *NodeIdGenerator {
 	redSync := redsync.New(redisClient)
 

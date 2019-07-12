@@ -7,6 +7,7 @@ import (
 	"github.com/zhuyst/shorturl-service/node-id-generator"
 )
 
+// nodeMax 最大节点数
 var nodeMax int64
 
 func init() {
@@ -20,14 +21,16 @@ func init() {
 	snowflake.StepBits = 1
 }
 
+// KeyGenerator 分布式ID生成器
 type KeyGenerator struct {
-	NodeId int64
+	NodeId int64 // 节点ID
 
 	redisClient     *redis.Client
 	node            *snowflake.Node
 	nodeIdGenerator *node_id_generator.NodeIdGenerator
 }
 
+// New 实例化一个KeyGenerator
 func New(redisClient *redis.Client) (*KeyGenerator, error) {
 	nodeIdGenerator := node_id_generator.New(redisClient, nodeMax)
 	nodeId, err := nodeIdGenerator.GetNodeId()
@@ -50,6 +53,7 @@ func New(redisClient *redis.Client) (*KeyGenerator, error) {
 	}, nil
 }
 
+// Generate 生成一串分布式ID
 func (generator *KeyGenerator) Generate() string {
 	return generator.node.Generate().Base58()
 }

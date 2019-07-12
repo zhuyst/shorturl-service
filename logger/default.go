@@ -5,10 +5,12 @@ import (
 	"os"
 )
 
+// defaultLogger 默认Logger
 type defaultLogger struct {
 	l *log.Logger
 }
 
+// NewDefaultLogger 使用默认Logger打印日志
 func NewDefaultLogger() Logger {
 	logger = &defaultLogger{
 		l: log.New(os.Stdout, "[shorturl-service] ", log.Ldate|log.Ltime),

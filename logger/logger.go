@@ -2,6 +2,7 @@ package logger
 
 import "sync"
 
+// Logger 实现该接口可以自定义日志打印
 type Logger interface {
 	Info(format string, v ...interface{})
 	Error(format string, v ...interface{})

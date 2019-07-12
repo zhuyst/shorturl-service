@@ -5,6 +5,7 @@ import (
 	"github.com/go-redis/redis"
 )
 
+// NewTestRedisClient 创建一个Mock Redis
 func NewTestRedisClient() *redis.Client {
 	ms, err := miniredis.Run()
 	if err != nil {
