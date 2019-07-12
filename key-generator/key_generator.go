@@ -3,6 +3,7 @@ package key_generator
 import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/go-redis/redis"
+	"github.com/zhuyst/shorturl-service/logger"
 	"github.com/zhuyst/shorturl-service/node-id-generator"
 )
 
@@ -31,11 +32,13 @@ func New(redisClient *redis.Client) (*KeyGenerator, error) {
 	nodeIdGenerator := node_id_generator.New(redisClient, nodeMax)
 	nodeId, err := nodeIdGenerator.GetNodeId()
 	if err != nil {
+		logger.Error("GetNodeId FAIL, Error: %s", err.Error())
 		return nil, err
 	}
 
 	node, err := snowflake.NewNode(nodeId)
 	if err != nil {
+		logger.Error("Snowflake NewNode FAIL, Error: %s", err.Error())
 		return nil, err
 	}
 

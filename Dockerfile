@@ -1,8 +1,9 @@
-FROM golang:1.12.1-alpine3.9 AS BUILDER
+FROM golang:1.12.7-alpine3.10 AS BUILDER
 
 WORKDIR /go/src/
 
 ENV GO111MODULE on
+ENV GOPROXY https://goproxy.io
 
 ADD . .
 
