@@ -20,7 +20,7 @@ type Option struct {
 	Domain        string
 	ServiceUri    string
 
-	Logger logger.Logger
+	Logger logger.ILogger
 
 	urlStorage *url_storage.UrlStorage
 }
@@ -45,8 +45,8 @@ func (option *Option) initConfig(redisClient *redis.Client) error {
 		option.ServiceUri = defaultServiceUri
 	}
 
-	if option.Logger == nil {
-		option.Logger = logger.NewDefaultLogger()
+	if option.Logger != nil {
+		logger.Logger = option.Logger
 	}
 
 	if option.Domain == "" {
