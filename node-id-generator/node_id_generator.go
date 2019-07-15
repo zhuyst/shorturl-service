@@ -191,7 +191,6 @@ func (generator *NodeIdGenerator) startListenSignal() error {
 			}
 
 			logger.Info("ClearNodeId SUCCESS, NodeId: %d", generator.nodeId)
-			os.Exit(0)
 		}
 	}()
 
