@@ -12,15 +12,19 @@ import (
 )
 
 var (
+	// defaultLongUrlRegexp 默认的长url验证表达式
 	defaultLongUrlRegexp = regexp.MustCompile("https://.*")
-	defaultServiceUri    = "/"
+
+	// defaultServiceUri 服务的默认uri前缀
+	defaultServiceUri = "/"
 )
 
+// Option shorturl-service的配置项
 type Option struct {
-	LongUrlRegexp    *regexp.Regexp
-	Domain           string
-	ServiceUri       string
-	Long2ShortExpire time.Duration
+	LongUrlRegexp    *regexp.Regexp // 长url验证表达式，不设置默认为defaultLongUrlRegexp
+	Domain           string         // 短url服务的域名
+	ServiceUri       string         // 短url服务的uri前缀
+	Long2ShortExpire time.Duration  // 长-短url映射缓存的过期时间，默认为不过期
 
 	Logger logger.Logger
 
@@ -55,6 +59,7 @@ func (option *Option) initConfig(redisClient *redis.Client) error {
 		return errors.New("need option.domain")
 	}
 
+	// Domain + ServiceUri作为短url前缀
 	shortUrlPrefix := fmt.Sprintf("https://%s%s", option.Domain, option.ServiceUri)
 	urlStorage, err := url_storage.New(redisClient, shortUrlPrefix)
 	if err != nil {

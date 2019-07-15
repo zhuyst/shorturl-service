@@ -23,7 +23,7 @@ func init() {
 
 // KeyGenerator 分布式ID生成器
 type KeyGenerator struct {
-	NodeId int64 // 节点ID
+	NodeId int64 // 当前节点ID
 
 	redisClient     *redis.Client
 	node            *snowflake.Node

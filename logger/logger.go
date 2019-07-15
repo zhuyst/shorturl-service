@@ -29,6 +29,7 @@ func Fatal(format string, v ...interface{}) {
 	logger.Fatal(format, v...)
 }
 
+// getLogger 获取Logger，如果Logger为nil会使用defaultLogger
 func getLogger() Logger {
 	mutex.Lock()
 	defer mutex.Unlock()

@@ -28,19 +28,19 @@ const (
 
 // NodeIdGenerator 节点ID生成器
 type NodeIdGenerator struct {
-	nodeId  int64
-	nodeMax int64
+	nodeId  int64 // 当前节点ID
+	nodeMax int64 // 最大节点数量
 
 	redisClient    *redis.Client
 	redSync        *redsync.RedSync
-	getNodeIdMutex *redsync.Mutex
+	getNodeIdMutex *redsync.Mutex // 函数GetNodeId的分布式锁
 
-	nodeIdKey     string
-	nodeIdLockKey string
-	nodeIdMutex   *redsync.Mutex
+	nodeIdKey     string         // 当前nodeId在Redis中的Key
+	nodeIdLockKey string         // 对进行nodeIdKey进行读写的分布式锁Key
+	nodeIdMutex   *redsync.Mutex // 使用nodeIdLockKey实例化的分布式锁
 
-	nodeUUID   string
-	nodeHolder *time.Ticker
+	nodeUUID   string       // 存储nodeId对应的value值
+	nodeHolder *time.Ticker // 维持nodeId的定时器
 }
 
 // New 实例化一个NodeIdGenerator
@@ -56,6 +56,7 @@ func New(redisClient *redis.Client, nodeMax int64) *NodeIdGenerator {
 	}
 }
 
+// GetNodeId 获取当前NodeId
 func (generator *NodeIdGenerator) GetNodeId() (int64, error) {
 	if err := generator.getNodeIdMutex.Lock(); err != nil {
 		return -1, err
@@ -69,6 +70,7 @@ func (generator *NodeIdGenerator) GetNodeId() (int64, error) {
 	return generator.generateNodeId()
 }
 
+// generateNodeId 生成NodeId，并初始化NodeHolder
 func (generator *NodeIdGenerator) generateNodeId() (int64, error) {
 	// 询问从0到nodeMax是否有坑位
 	var i int64
@@ -87,14 +89,17 @@ func (generator *NodeIdGenerator) generateNodeId() (int64, error) {
 			return -1, err
 		}
 
-		// 开始生成NodeId
+		// 找到坑位，将索引设为nodeId
 		generator.nodeId = i
 		generator.nodeIdKey = key
+
+		// 维持该NodeId
 		if err := generator.startNodeHolder(); err != nil {
 			logger.Error("startNodeHolder FAIL, NodeId: %d, Error: %s", i, err.Error())
 			return -1, err
 		}
 
+		// 监听应用退出信号，及时清除nodeId占用
 		if err := generator.startListenSignal(); err != nil {
 			logger.Error("startListenSignal FAIL, NodeId: %d, Error: %s", i, err.Error())
 			return -1, err
@@ -107,6 +112,7 @@ func (generator *NodeIdGenerator) generateNodeId() (int64, error) {
 	return -1, fmt.Errorf("nodeNumber reached the maximum: %d", generator.nodeMax)
 }
 
+// startNodeHolder 启动NodeHolder，维持当前持有的NodeId
 func (generator *NodeIdGenerator) startNodeHolder() error {
 	nodeUUID := uuid.NewV4().String()
 	generator.nodeUUID = nodeUUID
@@ -115,6 +121,7 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 	nodeHolder := time.NewTicker(renewTime)
 	generator.nodeHolder = nodeHolder
 
+	// 往redis设置nodeId
 	if err := generator.setNodeId(); err != nil {
 		return err
 	}
@@ -124,6 +131,7 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 
 	logger.Info("startNodeHolder, NodeId: %d, NodeUUID: %s", generator.nodeId, nodeUUID)
 
+	// 启动新协程，维持nodeId
 	go func() {
 		for range nodeHolder.C {
 			if err := generator.resetNodeId(); err != nil {
@@ -137,10 +145,12 @@ func (generator *NodeIdGenerator) startNodeHolder() error {
 	return nil
 }
 
+// setNodeId 往Redis设置NodeId
 func (generator *NodeIdGenerator) setNodeId() error {
 	return generator.redisClient.Set(generator.nodeIdKey, generator.nodeUUID, holdKeyTime).Err()
 }
 
+// resetNodeId 使用当前NodeId刷新Redis中的NodeId，增加持有时长
 func (generator *NodeIdGenerator) resetNodeId() error {
 	if err := generator.nodeIdMutex.Lock(); err != nil {
 		return err
@@ -152,6 +162,7 @@ func (generator *NodeIdGenerator) resetNodeId() error {
 		return err
 	}
 
+	// 通过value值检查防止错误持有NodeId（一种非常特殊的情况）
 	if nodeUUIDFromRedis != generator.nodeUUID {
 		return fmt.Errorf("nodeUUIDFromRedis: %s != generator.nodeUUID: %s",
 			nodeUUIDFromRedis, generator.nodeUUID)
@@ -164,10 +175,13 @@ func (generator *NodeIdGenerator) resetNodeId() error {
 	return nil
 }
 
+// startListenSignal 监听应用退出信号，放弃持有当前NodeId并清除NodeId在Redis中的占用
 func (generator *NodeIdGenerator) startListenSignal() error {
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGKILL,
 		syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+
+	// 清除存储在redis中的nodeId
 	go func() {
 		for range c {
 			if err := generator.redisClient.Del(generator.nodeIdKey).Err(); err != nil {
