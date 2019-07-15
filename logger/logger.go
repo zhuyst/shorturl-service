@@ -2,14 +2,14 @@ package logger
 
 import "sync"
 
-type Logger interface {
+type ILogger interface {
 	Info(format string, v ...interface{})
 	Error(format string, v ...interface{})
 	Fatal(format string, v ...interface{})
 }
 
 var (
-	logger Logger
+	Logger ILogger
 	mutex  = &sync.Mutex{}
 )
 
@@ -28,13 +28,13 @@ func Fatal(format string, v ...interface{}) {
 	logger.Fatal(format, v...)
 }
 
-func getLogger() Logger {
+func getLogger() ILogger {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	if logger == nil {
-		logger = NewDefaultLogger()
+	if Logger == nil {
+		Logger = NewDefaultLogger()
 	}
 
-	return logger
+	return Logger
 }

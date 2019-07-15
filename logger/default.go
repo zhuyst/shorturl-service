@@ -9,11 +9,10 @@ type defaultLogger struct {
 	l *log.Logger
 }
 
-func NewDefaultLogger() Logger {
-	logger = &defaultLogger{
+func NewDefaultLogger() ILogger {
+	return &defaultLogger{
 		l: log.New(os.Stdout, "[shorturl-service] ", log.Ldate|log.Ltime),
 	}
-	return logger
 }
 
 func (logger *defaultLogger) Info(format string, v ...interface{}) {

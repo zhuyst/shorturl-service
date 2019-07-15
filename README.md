@@ -1,5 +1,9 @@
 # 短URL生成服务
 
+[![Build Status](https://travis-ci.org/zhuyst/shorturl-service.svg?branch=master)](https://travis-ci.org/zhuyst/shorturl-service)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zhuyst/shorturl-service)](https://goreportcard.com/report/github.com/zhuyst/shorturl-service)
+[![codecov](https://codecov.io/gh/zhuyst/shorturl-service/branch/master/graph/badge.svg)](https://codecov.io/gh/zhuyst/shorturl-service)
+
 短URL生成服务，使用snowflake生成key，使用redis存储映射。
 
 ## 项目主要依赖
