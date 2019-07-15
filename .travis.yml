@@ -5,5 +5,4 @@ go:
   - "1.12.7"
 
 env:
-  - GO111MODULE=on
-  - GOPROXY=https://goproxy.io
+  - GO111MODULE=on GOPROXY=https://goproxy.io
