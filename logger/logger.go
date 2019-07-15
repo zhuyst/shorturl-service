@@ -2,15 +2,15 @@ package logger
 
 import "sync"
 
-// Logger 实现该接口可以自定义日志打印
-type Logger interface {
+// ILogger 实现该接口可以自定义日志打印
+type ILogger interface {
 	Info(format string, v ...interface{})
 	Error(format string, v ...interface{})
 	Fatal(format string, v ...interface{})
 }
 
 var (
-	logger Logger
+	Logger ILogger
 	mutex  = &sync.Mutex{}
 )
 
@@ -30,13 +30,13 @@ func Fatal(format string, v ...interface{}) {
 }
 
 // getLogger 获取Logger，如果Logger为nil会使用defaultLogger
-func getLogger() Logger {
+func getLogger() ILogger {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	if logger == nil {
-		logger = NewDefaultLogger()
+	if Logger == nil {
+		Logger = NewDefaultLogger()
 	}
 
-	return logger
+	return Logger
 }

@@ -11,11 +11,10 @@ type defaultLogger struct {
 }
 
 // NewDefaultLogger 使用默认Logger打印日志
-func NewDefaultLogger() Logger {
-	logger = &defaultLogger{
+func NewDefaultLogger() ILogger {
+	return &defaultLogger{
 		l: log.New(os.Stdout, "[shorturl-service] ", log.Ldate|log.Ltime),
 	}
-	return logger
 }
 
 func (logger *defaultLogger) Info(format string, v ...interface{}) {

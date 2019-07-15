@@ -26,7 +26,7 @@ type Option struct {
 	ServiceUri       string         // 短url服务的uri前缀
 	Long2ShortExpire time.Duration  // 长-短url映射缓存的过期时间，默认为不过期
 
-	Logger logger.Logger
+	Logger logger.ILogger
 
 	urlStorage *url_storage.UrlStorage
 }
@@ -51,8 +51,8 @@ func (option *Option) initConfig(redisClient *redis.Client) error {
 		option.ServiceUri = defaultServiceUri
 	}
 
-	if option.Logger == nil {
-		option.Logger = logger.NewDefaultLogger()
+	if option.Logger != nil {
+		logger.Logger = option.Logger
 	}
 
 	if option.Domain == "" {
